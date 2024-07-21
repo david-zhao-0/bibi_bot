@@ -12,12 +12,12 @@ class DefaultCommands(commands.Cog):
 
     @commands.command()
     async def setprefix(self, ctx, *, newprefix: str):
-        with open('serverprefixes.json', 'r') as file:
+        with open('data/serverprefixes.json', 'r') as file:
             prefix = json.load(file)
     
         prefix[str(ctx.guild.id)] = newprefix
 
-        with open('serverprefixes.json', 'w') as file:
+        with open('data/serverprefixes.json', 'w') as file:
             json.dump(prefix, file, indent=4)
 
         await ctx.send(f'Prefix successfully set to \"{newprefix}\"')

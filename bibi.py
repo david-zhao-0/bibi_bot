@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 import asyncio
 import discord
@@ -18,7 +21,6 @@ def update_server_prefix(guild, *args):
         with open('data/serverprefixes.json', 'r') as file:
             prefix = json.load(file)
         prefix[str(guild.id)] = args
-    
     
 client = commands.Bot(command_prefix=get_server_prefix, intents=discord.Intents.all())
 

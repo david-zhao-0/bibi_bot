@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+import asyncio
 from discord.ext import tasks, commands
 import datetime
 from supabase import create_client
@@ -15,10 +16,15 @@ class QuestionOfTheDay(commands.Cog):
 
     @commands.command()
     async def lastquestion(self, ctx):
-        response = self.supabase.table("Questions").select("id", "question").order("created_at").eq("asked", False).eq("guild", str(ctx.guild)).limit(1).single().execute()
-        print(response.data['question'])
-        self.supabase.table("Questions").update({"asked" : True}).eq("id", response.data['id']).execute()
-        await ctx.send(response)
+        response = (self.supabase.table("Questions")
+                    .select("id", "question")
+                    .eq("asked", True)
+                    .eq("guild", str(ctx.guild))
+                    .order("id", desc=True)
+                    .limit(1)
+                    .single()
+                    .execute())
+        await ctx.send('The last question that was asked: ' + response.data['question'])
 
     @commands.command()
     async def submitquestion(self, ctx, *, question : str):
@@ -31,29 +37,49 @@ class QuestionOfTheDay(commands.Cog):
         await ctx.send('Your question was submitted!')
 
     @commands.command()
-    async def removelastquestion(self, ctx):
-        print('To implement')
-        pass
+    async def removesubmittedquestion(self, ctx):
+        response = (self.supabase.table("Questions")
+                    .delete()
+                    .eq("asked", False)
+                    .eq("guild", str(ctx.guild))
+                    .eq("asked_by", str(ctx.author))
+                    .order("id", desc=True)
+                    .limit(1)
+                    .single()
+                    .execute())
+        await ctx.send(f'Your most recent QOTD question in {ctx.guild} was deleted.')
 
     @commands.command()
-    async def questions(self, ctx):
-        response = self.supabase.table("Questions").select("question", count="exact").order("created_at").eq("asked", False).eq("guild", str(ctx.guild)).execute()
+    async def nextquestions(self, ctx):
+        response = (self.supabase.table("Questions")
+                    .select("question", count="exact")
+                    .eq("asked", False)
+                    .eq("guild", str(ctx.guild))
+                    .order("id")
+                    .execute())
         for i in range(response.count):
             question = response.data[i]['question']
             await ctx.send(f'{i + 1}: {question}')
 
     @commands.command()
     async def start_qotd(self, ctx):
-        await self.get_last_question.start(ctx)
-
+        await asyncio.gather(
+            ctx.send(f'QOTD questions initiated in {ctx.guild} for channel {ctx.channel}.'),
+            self.get_last_question.start(ctx)
+        ) 
+        
     @commands.command()
     async def stop_qotd(self, ctx):
-        await self.get_last_question.stop(ctx)
+        await asyncio.gather(
+            ctx.send(f'QOTD questions stopped.'),
+            self.get_last_question.stop(ctx)
+        )
 
     @tasks.loop(time=default_question_time)
     async def get_last_question(self, ctx : commands.Context):
-        question = self.supabase.table("Questions").select("question").eq("asked", False).execute()
-        await ctx.send(question)
+        question_to_ask = self.supabase.table("Questions").select("question").eq("asked", False).execute()
+        self.supabase.table("Questions").update({"asked" : True}).eq("id", question_to_ask.data['id']).execute()
+        await ctx.send(question_to_ask)
 
 async def setup(client):
     await client.add_cog(QuestionOfTheDay(client))

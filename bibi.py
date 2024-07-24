@@ -11,14 +11,16 @@ import traceback
 
 TOKEN = os.environ['BIBI_BOT_TOKEN']
 
+PREFIXFILE_PATH = 'data/serverprefixes.json'
+
 def get_server_prefix(client, message):
-    with open('data/serverprefixes.json', 'r') as file:
+    with open(PREFIXFILE_PATH, 'r') as file:
         prefix = json.load(file)
     return prefix[str(message.guild.id)]
 
 def update_server_prefix(guild, *args):
     if not args:
-        with open('data/serverprefixes.json', 'r') as file:
+        with open(PREFIXFILE_PATH, 'r') as file:
             prefix = json.load(file)
         prefix[str(guild.id)] = args
     
@@ -30,22 +32,22 @@ async def on_ready():
 
 @client.event
 async def on_guild_join(guild):
-    with open('data/serverprefixes.json', 'r') as file:
+    with open(PREFIXFILE_PATH, 'r') as file:
         prefix = json.load(file)
 
     prefix[str(guild.id)] = 'b!'
 
-    with open('data/serverprefixes.json', 'w') as file:
+    with open(PREFIXFILE_PATH, 'w') as file:
         json.dump(prefix, file, indent=4)
 
 @client.event
 async def on_guild_remove(guild):
-    with open('data/serverprefixes.json', 'r') as file:
+    with open(PREFIXFILE_PATH, 'r') as file:
         prefix = json.load(file)
 
     prefix.pop(str(guild.id))
 
-    with open('serverprefixes.json', 'w') as file:
+    with open(PREFIXFILE_PATH, 'w') as file:
         json.dump(prefix, file, indent=4)
 
 async def load_extensions():

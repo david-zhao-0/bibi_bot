@@ -10,7 +10,6 @@ from loguru import logger
 import traceback
 
 TOKEN = os.environ['BIBI_BOT_TOKEN']
-
 PREFIXFILE_PATH = 'data/serverprefixes.json'
 
 def get_server_prefix(client, message):

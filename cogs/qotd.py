@@ -15,7 +15,7 @@ class QuestionOfTheDay(commands.Cog):
         self.client = client
 
     @commands.command()
-    async def lastquestion(self, ctx):
+    async def lastquestion(self, ctx): #TODO -- set policies for RLS 
         response = (self.supabase.table("Questions")
                     .select("id", "question")
                     .eq("asked", True)
@@ -37,15 +37,13 @@ class QuestionOfTheDay(commands.Cog):
         await ctx.send('Your question was submitted!')
 
     @commands.command()
-    async def removesubmittedquestion(self, ctx):
+    async def removelastquestion(self, ctx):
         response = (self.supabase.table("Questions")
                     .delete()
                     .eq("asked", False)
                     .eq("guild", str(ctx.guild))
                     .eq("asked_by", str(ctx.author))
-                    .order("id", desc=True)
                     .limit(1)
-                    .single()
                     .execute())
         await ctx.send(f'Your most recent QOTD question in {ctx.guild} was deleted.')
 
@@ -57,9 +55,8 @@ class QuestionOfTheDay(commands.Cog):
                     .eq("guild", str(ctx.guild))
                     .order("id")
                     .execute())
-        for i in range(response.count):
-            question = response.data[i]['question']
-            await ctx.send(f'{i + 1}: {question}')
+        test = "\n".join([i['question'] for i in response.data])        
+        await ctx.send(f'**Upcoming questions:**\n{test}')
 
     @commands.command()
     async def start_qotd(self, ctx):

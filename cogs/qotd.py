@@ -55,8 +55,8 @@ class QuestionOfTheDay(commands.Cog):
                     .eq("guild", str(ctx.guild))
                     .order("id")
                     .execute())
-        test = "\n".join([i['question'] for i in response.data])        
-        await ctx.send(f'**Upcoming questions:**\n{test}')
+        nextquestions = "\n".join([i['question'] for i in response.data])        
+        await ctx.send(f'**Upcoming questions:**\n{nextquestions}')
 
     @commands.command()
     async def start_qotd(self, ctx):

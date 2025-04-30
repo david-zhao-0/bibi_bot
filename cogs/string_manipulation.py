@@ -1,6 +1,4 @@
 from discord.ext import commands
-import json
-import re
 
 class StringManipulation(commands.Cog):
 

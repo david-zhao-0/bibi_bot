@@ -1,10 +1,17 @@
 from discord.ext import commands
 import random
+import os
+import sys
 import json
 
 class DefaultCommands(commands.Cog):
     def __init__(self, client):
         self.client = client
+
+    @commands.command()
+    async def restart(self, ctx):
+        await ctx.send("Restarting bot...")
+        os.execv(sys.executable, ['python'] + sys.argv)
 
     @commands.command(aliases=['hello', 'sup', 'yo'])
     async def hi(self, ctx):
@@ -23,13 +30,13 @@ class DefaultCommands(commands.Cog):
         await ctx.send(f'Prefix successfully set to \"{newprefix}\"')
 
     @commands.command()
-    async def roll(self, ctx, n_dice: int):
+    async def roll(self, ctx, n_dice = 1):
+        def roll_n_dice(n):
+            sum = 0
+            for _ in range(n):
+                sum = sum + random.randint(1,6)
+            return sum
         if n_dice > 0 and n_dice < 1e6:
-            def roll_n_dice(n):
-                sum = 0
-                for i in range(n):
-                    sum = sum + random.randint(1,6)
-                return sum
             await ctx.send(f'{ctx.author} rolled a **{roll_n_dice(n_dice)}** with {n_dice} dice')
         else:
             await ctx.send(f'Cannot roll {n_dice} dice!')

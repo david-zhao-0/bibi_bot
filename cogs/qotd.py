@@ -3,6 +3,7 @@ load_dotenv()
 
 import os
 import asyncio
+import logging
 from discord.ext import tasks, commands
 import datetime
 from supabase import create_client
@@ -10,28 +11,40 @@ from supabase import create_client
 class QuestionOfTheDay(commands.Cog):
     supabase = create_client(os.environ.get('QOTD_DATA_URL'), os.environ.get('QOTD_DATA_KEY'))
     default_question_time = datetime.time(hour=12, minute=0, tzinfo=datetime.timezone.utc)
+    logging.basicConfig(level=logging.DEBUG)
 
     def __init__(self, client):
         self.client = client
 
     @commands.command()
     async def lastquestion(self, ctx): #TODO -- set policies for RLS 
-        response = (self.supabase.table("Questions")
-                    .select("id", "question")
-                    .eq("asked", True)
-                    .eq("guild", str(ctx.guild))
-                    .order("id", desc=True)
-                    .limit(1)
-                    .single()
-                    .execute())
-        await ctx.send('The last question that was asked: ' + response.data['question'])
+        try :
+            response = (self.supabase.table("Questions")
+                                .select("id", "question")
+                                .eq("asked", True)
+                                .eq("guild", str(ctx.guild))
+                                .order("id", desc=True)
+                                .limit(1)
+                                .single()
+                                .execute())
+        except Exception as e:
+            logging.error(f"Exception occurred: {e}")
+            await ctx.send(f"An error occurred: {e}")
+        
+        logging.debug(response)
+
+        if (response == ""):
+            await ctx.send("No previous question!")
+        else:
+            await ctx.send('The last question that was asked: ' + response.data['question'])
 
     @commands.command()
     async def submitquestion(self, ctx, *, question : str):
         self.supabase.table("Questions").insert({
+            "user_id" : ctx.author.id,
+            "asked_by" : str(ctx.author),
             "guild" : str(ctx.guild),
             "question" : question,
-            "asked_by" : str(ctx.author),
             "asked" : False
         }).execute()
         await ctx.send('Your question was submitted!')
@@ -42,21 +55,23 @@ class QuestionOfTheDay(commands.Cog):
                     .delete()
                     .eq("asked", False)
                     .eq("guild", str(ctx.guild))
-                    .eq("asked_by", str(ctx.author))
-                    .limit(1)
+                    .eq("asked_by", str(ctx.author.name))
                     .execute())
         await ctx.send(f'Your most recent QOTD question in {ctx.guild} was deleted.')
 
     @commands.command()
-    async def nextquestions(self, ctx):
+    async def questions(self, ctx):
         response = (self.supabase.table("Questions")
                     .select("question", count="exact")
                     .eq("asked", False)
                     .eq("guild", str(ctx.guild))
                     .order("id")
                     .execute())
-        nextquestions = "\n".join([i['question'] for i in response.data])        
-        await ctx.send(f'**Upcoming questions:**\n{nextquestions}')
+        questions = "\n".join([i['question'] for i in response.data])
+        if (questions == ""):
+            await ctx.send('No upcoming questions!')
+        else:
+            await ctx.send(f'**Upcoming questions:**\n{questions}')
 
     @commands.command()
     async def start_qotd(self, ctx):

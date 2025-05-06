@@ -1,4 +1,5 @@
 from discord.ext import commands
+from discord import Embed
 import random
 import os
 import sys
@@ -8,7 +9,8 @@ class DefaultCommands(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.command()
+    @commands.command(aliases=['reset'])
+    @commands.has_guild_permissions(manage_channels=True)
     async def restart(self, ctx):
         await ctx.send("Restarting bot...")
         os.execv(sys.executable, ['python'] + sys.argv)
@@ -18,6 +20,7 @@ class DefaultCommands(commands.Cog):
         await ctx.send(f'Hi {ctx.author}!')
 
     @commands.command()
+    @commands.has_guild_permissions(manage_messages=True)
     async def setprefix(self, ctx, *, newprefix: str):
         with open('data/serverprefixes.json', 'r') as file:
             prefix = json.load(file)
@@ -46,6 +49,12 @@ class DefaultCommands(commands.Cog):
         channel = member.guild.system_channel
         if channel is not None:
             await channel.send(f'Welcome {member.mention}!')
+
+    @commands.command()
+    async def test(self, ctx):
+        embed_content = Embed(title="title", type="image")
+        embed_content.set_image(url="https://safebooru.org//images/4365/d0899fac8c4d9ffc1dd08e9fc0e1da3e31693ee0.jpg?5751601")
+        await ctx.send(f"Hi", embed=embed_content)
 
 async def setup(client):
     await client.add_cog(DefaultCommands(client))

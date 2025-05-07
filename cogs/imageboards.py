@@ -1,7 +1,12 @@
 from discord.ext import commands
 from discord import Embed
+from json import JSONDecodeError
+import json
 import requests
-from bs4 import BeautifulSoup
+import random
+
+SAFEBOORU_BASE_LINK = "https://safebooru.org/index.php?page=dapi&s=post&q=index&limit=1000&json=1&tags="
+DEFAULT_AMOUNT = 3
 
 class ImageBoards(commands.Cog):
 
@@ -11,49 +16,45 @@ class ImageBoards(commands.Cog):
     @commands.command()
     async def safebooru(self, ctx, *, message):
         tags = message.split(" ")
-        base = "https://safebooru.org/index.php?page=post&s=list&tags="
-        link = base + "+".join(tags)
+        amount = DEFAULT_AMOUNT
+        amount_specified = True
         
-        response = requests.get(link)
-        html = response.text
-        soup = BeautifulSoup(html, "html.parser")
-
-        images = []
-
-        image_container = soup.find_all("div", {"class":"image-list"})
-        if (len(image_container) != 0):
-            image_ids = []
-
-            for child in image_container[0].children:
-                if child.name == "span":
-                    span_id = child.get("id")
-                    image_ids.append(span_id[1:])
+        try:
+            amount = int(tags[len(tags) - 1])
+        except ValueError:
+            amount_specified = False
+            await ctx.send("No amount specified. 3 images will be retrieved.")
         
-            image_url_prefix = "https://safebooru.org/index.php?page=post&s=view&id="
-            source_image_links = []
-
-            for image_id in image_ids[:5]:
-
-                image_link = image_url_prefix + image_id
-                html = requests.get(image_link).text
-                soup = BeautifulSoup(html, "html.parser")
-                image_container = soup.find_all("div", {"id":""})
-
-                for child in image_container[0].children:
-                    if child.name == "img":
-                        source_image_link = child.get("src")
-                        source_image_links.append(source_image_link)
-
-            for image_link in source_image_links:        
-                embed_image = Embed(title=message, type="image")
-                embed_image.set_image(url=image_link)
-                images.append(embed_image)
-
-            for image in images:
-                await ctx.send(embed=image)
-
+        if amount > 10:
+            await ctx.send("You can't request more than 10 images at a time!")
         else:
-            await ctx.send("No results found!")
+            link =  SAFEBOORU_BASE_LINK + "+".join(tags[:-1]) if amount_specified else SAFEBOORU_BASE_LINK + "+".join(tags)
+            
+            response = requests.get(link)
+            html = response.text
+            embeds = []
+
+            try:
+
+                json_output = json.loads(html)
+                random_indices = random.sample(list(range(0, len(json_output))), k=amount)
+
+                for idx in random_indices:
+
+                    embed = Embed(type="image")
+                    current_entry = json_output[idx]
+
+                    embed.set_image(url=current_entry['file_url'])
+                    source_link = current_entry['source'] if current_entry['source'] else "No source found."
+                    embed.add_field(name="Source", value=source_link)
+                    embeds.append(embed)
+
+                await ctx.send(f"{len(json_output)} posts found with the tags {tags}. Selecting {amount} at random.")
+                await ctx.send(embeds=embeds)
+            except JSONDecodeError:
+                await ctx.send(f"No results found for tag(s): {tags}!")
+            except IndexError:
+                await ctx.send(f"Not enough images to send: {len(embed)} images found for {tags}")
 
 async def setup(client):
     await client.add_cog(ImageBoards(client))

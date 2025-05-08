@@ -54,5 +54,6 @@ coverage.xml
 docs/_build/
 
 # Project specific
-data/*
+data/questions.db
+data/serverprefixes.json
 test.py

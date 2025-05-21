@@ -4,10 +4,12 @@ import discord
 from discord.ext import commands
 import json
 from loguru import logger
+import logging
 import traceback
 
 TOKEN = os.environ['BIBI_BOT_TOKEN']
 PREFIXFILE_PATH = 'data/serverprefixes.json'
+
 
 def get_server_prefix(client, message):
     with open(PREFIXFILE_PATH, 'r') as file:
@@ -25,6 +27,7 @@ client = commands.Bot(command_prefix=get_server_prefix, intents=discord.Intents.
 @client.event
 async def on_ready():
     logger.info('Bot online!')
+    logging.basicConfig(level=logging.DEBUG)
 
 @client.event
 async def on_guild_join(guild):

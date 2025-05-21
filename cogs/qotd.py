@@ -1,4 +1,3 @@
-import os
 import asyncio
 import logging
 from discord.ext import tasks, commands
@@ -63,11 +62,11 @@ class QuestionOfTheDay(commands.Cog):
 
     @commands.command()
     async def questions(self, ctx):
-        sql = "SELECT question FROM qotd"
+        sql = "SELECT question FROM qotd WHERE guild = ?"
         try:
             with self.conn:
-                questions = self.cursor.execute(sql)
-                await(ctx.send("\n".join([question[0] for question in questions.fetchall()])))
+                questions = self.cursor.execute(sql, (str(ctx.guild),))
+                await(ctx.send("\n-".join([question[0] for question in questions.fetchall()])))
         except Exception as e:
             await ctx.send(f"Error retrieving questions: {e}")
 
@@ -103,7 +102,7 @@ class QuestionOfTheDay(commands.Cog):
             if row:
                 question_id, question_text = row
                 self.cursor.execute(update_entry_sql, (question_id,))
-                await ctx.send(question_text)
+                await ctx.send(f"# QOTD: {question_text}")
             else:
                 await ctx.send("No questions left! Add new questions or stop qotd...")
                 return

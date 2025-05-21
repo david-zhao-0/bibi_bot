@@ -6,7 +6,7 @@ import requests
 import urllib.parse
 
 TRACE_MOE_BASE_LINK = "https://api.trace.moe/search?anilistInfo&cutBorders&url={}"
-SIMILARITY_CUTOFF = 0.85
+SIMILARITY_CUTOFF = 0.80
 
 class Anime(commands.Cog):
 

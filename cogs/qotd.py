@@ -10,7 +10,6 @@ DEFAULT_QUESTION_TIME = datetime.time(hour=12, minute=0, tzinfo=datetime.timezon
 class QuestionOfTheDay(commands.Cog):
 
     question_time = DEFAULT_QUESTION_TIME
-    logging.basicConfig(level=logging.DEBUG)
 
     def __init__(self, client):
         self.client = client

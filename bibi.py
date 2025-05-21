@@ -9,7 +9,7 @@ import traceback
 
 TOKEN = os.environ['BIBI_BOT_TOKEN']
 PREFIXFILE_PATH = 'data/serverprefixes.json'
-
+logging.basicConfig(level=logging.DEBUG)
 
 def get_server_prefix(client, message):
     with open(PREFIXFILE_PATH, 'r') as file:
